@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Remover</title>
+    <style>
+body {
+            font-family: Arial, sans-serif;
+            background-image :url("{{url_for('static',filename='images/Com.png')}}");
+            background-size:cover;
+            background-repeat:no-repeat;
+            background-position:center center ;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .upload-section, .preview-section {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            width: 300px;
+        }
+
+        input[type="file"], button {
+            margin-top: 10px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        button:disabled {
+            background-color: grey;
+            cursor: not-allowed;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+
+        .preview img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Background Remover</h1>
+    <div class="container">
+        <div class="upload-section">
+            <h2>Upload Your Image</h2>
+            <input type="file" id="bgFile" required>
+            <button id="bgUploadButton" onclick="removeBackground()" disabled>Remove Background</button>
+        </div>
+
+        <div id="bgPreviewSection" class="preview-section" style="display: none;">
+            <h2>Background Removed</h2>
+            <div class="preview">
+                <img id="bgPreview" alt="Processed Image">
+            </div>
+            <a id="bgDownloadButton" href="#" download>
+                <button onclick="resetForm()">Download Image</button>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById("bgFile");
+        const uploadButton = document.getElementById("bgUploadButton");
+        const previewSection = document.getElementById("bgPreviewSection");
+        const previewImage = document.getElementById("bgPreview");
+        const downloadButton = document.getElementById("bgDownloadButton");
+
+        fileInput.addEventListener("change", () => {
+            uploadButton.disabled = !fileInput.files.length;
+        });
+
+        function removeBackground() {
+            if (!fileInput.files.length) {
+                alert("Please upload a file.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append("file", file);
+
+            uploadButton.disabled = true;
+            uploadButton.textContent = "Processing...";
+
+            fetch("/remove_background", {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.download_url) {
+                        previewImage.src = data.download_url;
+                        downloadButton.href = data.download_url;
+                        previewSection.style.display = "block";
+                        uploadButton.disabled = false;
+                        uploadButton.textContent = "Remove Background";
+                    } else if (data.error) {
+                        alert(data.error);
+                        uploadButton.disabled = false;
+                        uploadButton.textContent = "Remove Background";
+                    }
+                })
+                .catch((error) => {
+                    alert("Background removal failed. Please try again.");
+                    console.error(error);
+                    uploadButton.disabled = false;
+                    uploadButton.textContent = "Remove Background";
+                });
+        }
+
+        function resetForm() {
+            fileInput.value = "";
+            previewSection.style.display = "none";
+            uploadButton.disabled = true;
+        }
+    </script>
+</body>
+</html>

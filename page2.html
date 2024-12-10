@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Processing Options</title>
+    <style>
+ 
+        body {
+            font-family: Arial, sans-serif;
+            background-image :url("{{url_for('static',filename='images/BAck2.png')}}");
+            background-size:cover;
+            background-repeat:no-repeat;
+            background-position:center center ;
+            color:white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+ 
+ 
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+ 
+        .box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            width: 200px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+ 
+        .box:hover {
+            transform: scale(1.05);
+            box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.3);
+        }
+ 
+        h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+ 
+        a {
+            text-decoration: none;
+            color:black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Image Compressor -->
+        <a href="/compressor">
+            <div class="box">
+                <h2>Image Compressor</h2>
+            </div>
+        </a>
+ 
+        <!-- Image Converter -->
+        <a href="/converter">
+            <div class="box">
+                <h2>Image Converter</h2>
+            </div>
+        </a>
+ 
+        <!-- Background Remover -->
+        <a href="/background_remover">
+            <div class="box">
+                <h2>Background Remover</h2>
+            </div>
+        </a>
+    </div>
+</body>
+</html>

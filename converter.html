@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Converter</title>
+    <style>
+body {
+            font-family: Arial, sans-serif;
+            background-image :url("{{url_for('static',filename='images/Com.png')}}");
+            background-size:cover;
+            background-repeat:no-repeat;
+            background-position:center center ;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .upload-section, .format-section, .preview-section {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            width: 300px;
+        }
+
+        input[type="file"], button {
+            margin-top: 10px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: grey;
+            cursor: not-allowed;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .formats {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .format {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            padding: 10px;
+            width: 80px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .format:hover {
+            transform: scale(1.05);
+        }
+
+        .preview {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #downloadSection {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Converter</h1>
+    <div class="container">
+        <!-- File Upload -->
+        <div class="upload-section">
+            <h2>Upload Your File</h2>
+            <input type="file" id="uploadFile" required>
+            <button onclick="uploadFile()">Upload</button>
+        </div>
+
+        <!-- Format Selection -->
+        <div class="format-section">
+            <h2>Select Output Format</h2>
+            <div class="formats">
+                <div class="format" onclick="selectFormat('JPG')">JPG</div>
+                <div class="format" onclick="selectFormat('PNG')">PNG</div>
+                <div class="format" onclick="selectFormat('PDF')">PDF</div>
+                <div class="format" onclick="selectFormat('DOCX')">DOCX</div>
+                <div class="format" onclick="selectFormat('GIF')">GIF</div>
+                <div class="format" onclick="selectFormat('BMP')">BMP</div>
+                <div class="format" onclick="selectFormat('TIFF')">TIFF</div>
+                <div class="format" onclick="selectFormat('SVG')">SVG</div>
+            </div>
+            <p id="selectedFormat">Selected Format: None</p>
+        </div>
+
+        <!-- Convert Button -->
+        <button id="convertButton" onclick="convertFile()" disabled>Convert</button>
+
+        <!-- Download Section -->
+        <div id="downloadSection" class="preview-section">
+            <h2>Download Your File</h2>
+            <a id="downloadButton" href="#" class="button" download>
+                <button>Download File</button>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let selectedFormat = "";
+        let uploadedFilePath = "";
+
+        function selectFormat(format) {
+            selectedFormat = format;
+            document.getElementById("selectedFormat").textContent = `Selected Format: ${format}`;
+            document.getElementById("convertButton").disabled = uploadedFilePath === "";
+        }
+
+        function uploadFile() {
+            const fileInput = document.getElementById("uploadFile");
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            fetch("/upload", {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.file_path) {
+                        uploadedFilePath = data.file_path;
+                        alert("File uploaded successfully!");
+                        document.getElementById("convertButton").disabled = selectedFormat === "";
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch((error) => {
+                    alert("Upload failed. Please try again.");
+                    console.error(error);
+                });
+        }
+
+        function convertFile() {
+            if (!uploadedFilePath || !selectedFormat) {
+                alert("Please upload a file and select a format.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file_path", uploadedFilePath);
+            formData.append("format", selectedFormat);
+
+            fetch("/convert", {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.download_url) {
+                        const downloadSection = document.getElementById("downloadSection");
+                        const downloadButton = document.getElementById("downloadButton");
+                        downloadButton.href = data.download_url;
+                        downloadSection.style.display = "block";
+                    } else if (data.error) {
+                        alert(data.error);
+                    }
+                })
+                .catch((error) => {
+                    alert("Conversion failed. Please try again.");
+                    console.error(error);
+                });
+        }
+    </script>
+</body>
+</html>

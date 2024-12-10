@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Compressor</title>
+    <style>
+            body {
+            font-family: Arial, sans-serif;
+            background-image :url("{{url_for('static',filename='images/Com.png')}}");
+            background-size:cover;
+            background-repeat:no-repeat;
+            background-position:center center ;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .file-type-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .file-type {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            width: 150px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .file-type:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .file-type img {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 10px;
+        }
+
+        .file-type p {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .box {
+            display: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            width: 300px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        input[type="range"] {
+            width: 200px;
+        }
+
+        input[type="file"], button {
+            margin-top: 10px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        button:disabled {
+            background-color: grey;
+            cursor: not-allowed;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #processedImage {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+            border: 2px solid white;
+            border-radius: 10px;
+        }
+
+        #errorBox {
+            color: red;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Compressor</h1>
+    <div class="container">
+        <!-- File Type Selection -->
+        <div class="file-type-container">
+            <div class="file-type" onclick="resetUploadBox('image')">
+                <img src="/static/icons/images.jpg" alt="Image Icon">
+                <p>Image</p>
+            </div>
+            <div class="file-type" onclick="resetUploadBox('audio')">
+                <img src="/static/icons/audio.png" alt="Audio Icon">
+                <p>Audio</p>
+            </div>
+            <div class="file-type" onclick="resetUploadBox('video')">
+                <img src="/static/icons/Video.png" alt="Video Icon">
+                <p>Video</p>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="box" id="uploadBox">
+            <h2 id="uploadHeader">Upload Your File</h2>
+            <input type="file" id="uploadFile" required>
+            <button id="uploadButton" onclick="uploadFile()">Upload</button>
+        </div>
+
+        <!-- Process Section -->
+        <div class="box" id="processBox">
+            <h2>Set Quality</h2>
+            <div class="slider-container">
+                <span id="qualityValue">50%</span>
+                <input type="range" id="qualitySlider" min="0" max="100" value="50" oninput="updateQualityValue(this.value)">
+            </div>
+            <button id="applyButton" onclick="processFile()">Apply</button>
+        </div>
+
+        <!-- Download Section -->
+        <div class="box" id="downloadBox">
+            <h2>Download Your File</h2>
+            <img id="processedImage" src="#" alt="Processed Image Preview" style="display: none;">
+            <button id="downloadButton" onclick="downloadFile()">Download</button>
+        </div>
+
+        <!-- Error Section -->
+        <div class="box" id="errorBox">
+            <h3>Error:</h3>
+            <p id="errorMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        let selectedFileType = "";
+        let uploadedFilePath = "";
+        let downloadUrl = "";
+
+        function resetUploadBox(fileType) {
+            selectedFileType = fileType;
+            document.getElementById("uploadBox").style.display = "block";
+            document.getElementById("processBox").style.display = "none";
+            document.getElementById("downloadBox").style.display = "none";
+            document.getElementById("errorBox").style.display = "none";
+
+            const uploadHeader = document.getElementById("uploadHeader");
+            if (fileType === "image") {
+                uploadHeader.textContent = "Upload Your Image File (JPG, JPEG, PNG)";
+            } else if (fileType === "audio") {
+                uploadHeader.textContent = "Upload Your Audio File (MP3, WAV)";
+            } else if (fileType === "video") {
+                uploadHeader.textContent = "Upload Your Video File (MP4, AVI)";
+            }
+
+            const uploadButton = document.getElementById("uploadButton");
+            uploadButton.disabled = false;
+            uploadButton.textContent = "Upload";
+        }
+
+        function updateQualityValue(value) {
+            document.getElementById("qualityValue").textContent = `${value}%`;
+        }
+
+        function uploadFile() {
+            const fileInput = document.getElementById("uploadFile");
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("file_type", selectedFileType);
+
+            fetch("/upload", {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.file_path) {
+                        uploadedFilePath = data.file_path;
+                        document.getElementById("processBox").style.display = "block";
+                        const uploadButton = document.getElementById("uploadButton");
+                        uploadButton.disabled = true;
+                        uploadButton.textContent = "Uploaded";
+                    } else {
+                        showError(data.error);
+                    }
+                })
+                .catch((error) => {
+                    showError("Error uploading file.");
+                    console.error("Upload error:", error);
+                });
+        }
+
+        function processFile() {
+            const quality = document.getElementById("qualitySlider").value;
+
+            const formData = new FormData();
+            formData.append("file_path", uploadedFilePath);
+            formData.append("file_type", selectedFileType);
+
+            if (selectedFileType === "image") {
+                formData.append("quality", quality);
+            }
+
+            const applyButton = document.getElementById("applyButton");
+            applyButton.textContent = "Processing...";
+            applyButton.disabled = true;
+
+            fetch("/process", {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.download_url) {
+                        downloadUrl = data.download_url;
+                        document.getElementById("processedImage").src = downloadUrl;
+                        document.getElementById("processedImage").style.display = "block";
+                        document.getElementById("downloadBox").style.display = "block";
+                        applyButton.textContent = "Apply";
+                        applyButton.disabled = false;
+                    } else if (data.error) {
+                        showError(data.error);
+                        applyButton.textContent = "Apply";
+                        applyButton.disabled = false;
+                    }
+                })
+                .catch((error) => {
+                    showError("Processing failed. Please try again.");
+                    applyButton.textContent = "Apply";
+                    applyButton.disabled = false;
+                    console.error("Processing error:", error);
+                });
+        }
+
+        function downloadFile() {
+            window.location.href = downloadUrl;
+        }
+
+        function showError(message) {
+            document.getElementById("errorBox").style.display = "block";
+            document.getElementById("errorMessage").textContent = message;
+        }
+    </script>
+</body>
+</html>
